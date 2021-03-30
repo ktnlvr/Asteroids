@@ -18,6 +18,10 @@ struct Transform {
 struct Ship {
     Transform transform;
     olc::vf2d dimensions;
+
+    struct Stats {
+        float rotationSpeed;
+    } stats;
 };
 
 struct Asteroids : public olc::PixelGameEngine {
@@ -32,6 +36,7 @@ struct Asteroids : public olc::PixelGameEngine {
 static Asteroids* asteroids;
 
 namespace Procedures {
+    void ProcessInputs();
     void DrawShip();
 }
 
@@ -45,14 +50,17 @@ bool Asteroids::OnUserCreate() {
     asteroids->ship.transform.position = { (float)asteroids->ScreenWidth() / 2, (float)asteroids->ScreenHeight() / 2 };
     asteroids->ship.dimensions = { 14, 20 };
     asteroids->ship.transform.radius = asteroids->ship.dimensions.x < asteroids->ship.dimensions.y ? asteroids->ship.dimensions.x : asteroids->ship.dimensions.y;
+
+    asteroids->ship.stats.rotationSpeed = 3;
+
     return OK;
 }
 
 bool Asteroids::OnUserUpdate(float deltaTime) {
     this->deltaTime = deltaTime;
-    this->ship.transform.rotation += deltaTime;
 
     Clear(olc::BLACK);
+    Procedures::ProcessInputs();
     Procedures::DrawShip();
 
     return OK;
@@ -71,6 +79,10 @@ void Asteroids::RotateVector(olc::vf2d& target, olc::vf2d around, float angle) {
     rotated += around;
 
     target = rotated;
+}
+
+void Procedures::ProcessInputs() {
+    asteroids->ship.transform.rotation += (asteroids->GetKey(olc::Key::D).bHeld - asteroids->GetKey(olc::Key::A).bHeld) * asteroids->deltaTime * asteroids->ship.stats.rotationSpeed;
 }
 
 void Procedures::DrawShip() {
