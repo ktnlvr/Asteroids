@@ -7,6 +7,7 @@
 
 struct Transform {
     olc::vf2d position;
+    // Rotation in radians!
     float rotation;
 };
 
@@ -34,7 +35,7 @@ namespace Procedures {
 bool Asteroids::OnUserCreate() {
     asteroids = this;
     asteroids->ship.transform.position = { (float)asteroids->ScreenWidth() / 2, (float)asteroids->ScreenHeight() / 2 };
-    asteroids->ship.dimensions = { 7, 10 };
+    asteroids->ship.dimensions = { 14, 20 };
     return OK;
 }
 
@@ -64,7 +65,7 @@ void Asteroids::RotateVector(olc::vf2d& target, olc::vf2d around, float angle) {
 }
 
 void Procedures::DrawShip() {
-    olc::vf2d a, b, c;
+    olc::vf2d a, b, c, direction = { 0, 1 };
     olc::vf2d center = asteroids->ship.transform.position;
     Transform* transform = &asteroids->ship.transform;
 
@@ -75,7 +76,9 @@ void Procedures::DrawShip() {
     asteroids->RotateVector(a, center, transform->rotation);
     asteroids->RotateVector(b, center, transform->rotation);
     asteroids->RotateVector(c, center, transform->rotation);
+    asteroids->RotateVector(direction, center, transform->rotation + 0.79 /* rad */);
 
+    asteroids->DrawLine(center, direction, olc::RED);
     asteroids->DrawLine(a, b);
     asteroids->DrawLine(b, c);
     asteroids->DrawLine(c, a);
@@ -85,7 +88,7 @@ void Procedures::DrawShip() {
 int main(int argc, char* argv[]) {
     Asteroids asteroids = Asteroids();
 
-    if (asteroids.Construct(128, 128, 4, 4))
+    if (asteroids.Construct(256, 256, 2, 2))
         asteroids.Start();
 
     return 0;
