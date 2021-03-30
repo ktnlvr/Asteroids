@@ -7,6 +7,7 @@
 
 struct Transform {
     olc::vf2d position;
+    float rotation;
 };
 
 struct Ship {
@@ -15,8 +16,10 @@ struct Ship {
 };
 
 struct Asteroids : public olc::PixelGameEngine {
+    float deltaTime;
     Ship ship;
 
+    void RotateVector(olc::vf2d& target, olc::vf2d around, float angle);
     bool OnUserCreate() override;
     bool OnUserUpdate(float) override;
 };
@@ -36,17 +39,42 @@ bool Asteroids::OnUserCreate() {
 }
 
 bool Asteroids::OnUserUpdate(float deltaTime) {
+    this->deltaTime = deltaTime;
+    this->ship.transform.rotation += deltaTime;
+
+    Clear(olc::BLACK);
     Procedures::DrawShip();
+
     return OK;
+}
+
+void Asteroids::RotateVector(olc::vf2d& target, olc::vf2d around, float angle) {
+    float cosangle = cos(angle);
+    float sinangle = sin(angle);
+
+    // moving point to the origin
+    target -= around;
+
+    olc::vf2d rotated = { target.x * cosangle - target.y * sinangle, target.x * sinangle + target.y * cosangle };
+
+    // shift back to origin
+    rotated += around;
+
+    target = rotated;
 }
 
 void Procedures::DrawShip() {
     olc::vf2d a, b, c;
     olc::vf2d center = asteroids->ship.transform.position;
+    Transform* transform = &asteroids->ship.transform;
 
     a = { center.x, center.y - (float) asteroids->ship.dimensions.y / 2};
     b = { center.x - (float)asteroids->ship.dimensions.x / 2, center.y + (float)asteroids->ship.dimensions.y / 2 };
     c = { center.x + (float)asteroids->ship.dimensions.x / 2, center.y + (float)asteroids->ship.dimensions.y / 2 };
+
+    asteroids->RotateVector(a, center, transform->rotation);
+    asteroids->RotateVector(b, center, transform->rotation);
+    asteroids->RotateVector(c, center, transform->rotation);
 
     asteroids->DrawLine(a, b);
     asteroids->DrawLine(b, c);
