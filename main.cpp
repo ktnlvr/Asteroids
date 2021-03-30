@@ -91,6 +91,16 @@ void Procedures::ProcessInputs() {
     asteroids->RotateVector(forward, olc::vf2d(0, 0), asteroids->ship.transform.rotation);
     asteroids->ship.velocity += forward * asteroids->ship.stats.movementSpeed * (asteroids->GetKey(olc::Key::S).bHeld - asteroids->GetKey(olc::Key::W).bHeld) * asteroids->deltaTime;
     asteroids->ship.transform.position += asteroids->ship.velocity;
+
+    if (asteroids->ship.transform.position.y > asteroids->ScreenHeight())
+        asteroids->ship.transform.position.y -= asteroids->ScreenHeight();
+    else if (asteroids->ship.transform.position.y < 0)
+        asteroids->ship.transform.position.y += asteroids->ScreenHeight();
+
+    if (asteroids->ship.transform.position.x > asteroids->ScreenWidth())
+        asteroids->ship.transform.position.x -= asteroids->ScreenWidth();
+    else if (asteroids->ship.transform.position.x < 0)
+        asteroids->ship.transform.position.x += asteroids->ScreenWidth();
 }
 
 void Procedures::DrawShip() {
