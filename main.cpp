@@ -86,16 +86,18 @@ void Procedures::ProcessInputs() {
 }
 
 void Procedures::DrawShip() {
-    olc::vf2d a, b, c, direction = { 0, 1 };
+    olc::vf2d a, b, c, d, direction = { 0, 1 };
     olc::vf2d center = asteroids->ship.transform.position;
     Transform* transform = &asteroids->ship.transform;
     olc::vf2d* dimension = &asteroids->ship.dimensions;
 
     a = { center.x, center.y - (float) asteroids->ship.dimensions.y / 2};
+    d = { center.x, center.y + (float) asteroids->ship.dimensions.y / 3 };
     b = { center.x - (float)asteroids->ship.dimensions.x / 2, center.y + (float)asteroids->ship.dimensions.y / 2 };
     c = { center.x + (float)asteroids->ship.dimensions.x / 2, center.y + (float)asteroids->ship.dimensions.y / 2 };
 
     asteroids->RotateVector(a, center, transform->rotation);
+    asteroids->RotateVector(d, center, transform->rotation);
     asteroids->RotateVector(b, center, transform->rotation);
     asteroids->RotateVector(c, center, transform->rotation);
     asteroids->RotateVector(direction, center, transform->rotation + 0.79 /* rad */);
@@ -103,7 +105,8 @@ void Procedures::DrawShip() {
     asteroids->DrawLine(center, direction, olc::RED);
     asteroids->DrawCircle(center, transform->radius, olc::GREEN);
     asteroids->DrawLine(a, b);
-    asteroids->DrawLine(b, c);
+    asteroids->DrawLine(b, d);
+    asteroids->DrawLine(d, c);
     asteroids->DrawLine(c, a);
 }
 
