@@ -18,9 +18,11 @@ struct Transform {
 struct Ship {
     Transform transform;
     olc::vf2d dimensions;
+    olc::vf2d velocity;
 
     struct Stats {
         float rotationSpeed;
+        float movementSpeed;
     } stats;
 };
 
@@ -52,6 +54,7 @@ bool Asteroids::OnUserCreate() {
     asteroids->ship.transform.radius = asteroids->ship.dimensions.x < asteroids->ship.dimensions.y ? asteroids->ship.dimensions.x : asteroids->ship.dimensions.y;
 
     asteroids->ship.stats.rotationSpeed = 3;
+    asteroids->ship.stats.movementSpeed = 1;
 
     return OK;
 }
@@ -83,6 +86,11 @@ void Asteroids::RotateVector(olc::vf2d& target, olc::vf2d around, float angle) {
 
 void Procedures::ProcessInputs() {
     asteroids->ship.transform.rotation += (asteroids->GetKey(olc::Key::D).bHeld - asteroids->GetKey(olc::Key::A).bHeld) * asteroids->deltaTime * asteroids->ship.stats.rotationSpeed;
+
+    olc::vf2d forward = { 0, 1 };
+    asteroids->RotateVector(forward, olc::vf2d(0, 0), asteroids->ship.transform.rotation);
+    asteroids->ship.velocity += forward * asteroids->ship.stats.movementSpeed * (asteroids->GetKey(olc::Key::S).bHeld - asteroids->GetKey(olc::Key::W).bHeld) * asteroids->deltaTime;
+    asteroids->ship.transform.position += asteroids->ship.velocity;
 }
 
 void Procedures::DrawShip() {
@@ -100,9 +108,9 @@ void Procedures::DrawShip() {
     asteroids->RotateVector(d, center, transform->rotation);
     asteroids->RotateVector(b, center, transform->rotation);
     asteroids->RotateVector(c, center, transform->rotation);
-    asteroids->RotateVector(direction, center, transform->rotation + 0.79 /* rad */);
+    asteroids->RotateVector(direction, olc::vf2d{ 0, 0 }, transform->rotation /* rad */);
 
-    asteroids->DrawLine(center, direction, olc::RED);
+    asteroids->DrawLine(center, center - direction * 16, olc::RED);
     asteroids->DrawCircle(center, transform->radius, olc::GREEN);
     asteroids->DrawLine(a, b);
     asteroids->DrawLine(b, d);
@@ -114,7 +122,7 @@ void Procedures::DrawShip() {
 int main(int argc, char* argv[]) {
     Asteroids asteroids = Asteroids();
 
-    if (asteroids.Construct(256, 256, 2, 2))
+    if (asteroids.Construct(512, 512, 1, 1))
         asteroids.Start();
 
     return 0;
