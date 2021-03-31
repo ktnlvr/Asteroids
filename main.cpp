@@ -53,8 +53,8 @@ bool Asteroids::OnUserCreate() {
     asteroids->ship.dimensions = { 14, 20 };
     asteroids->ship.transform.radius = asteroids->ship.dimensions.x < asteroids->ship.dimensions.y ? asteroids->ship.dimensions.x : asteroids->ship.dimensions.y;
 
-    asteroids->ship.stats.rotationSpeed = 3;
-    asteroids->ship.stats.movementSpeed = 1;
+    asteroids->ship.stats.rotationSpeed = 5;
+    asteroids->ship.stats.movementSpeed = 300;
 
     return OK;
 }
@@ -91,6 +91,7 @@ void Procedures::ProcessInputs() {
     asteroids->RotateVector(forward, olc::vf2d(0, 0), asteroids->ship.transform.rotation);
     asteroids->ship.velocity += forward * asteroids->ship.stats.movementSpeed * (asteroids->GetKey(olc::Key::S).bHeld - asteroids->GetKey(olc::Key::W).bHeld) * asteroids->deltaTime;
     asteroids->ship.transform.position += asteroids->ship.velocity;
+    asteroids->ship.velocity = { 0, 0 };
 
     if (asteroids->ship.transform.position.y > asteroids->ScreenHeight())
         asteroids->ship.transform.position.y -= asteroids->ScreenHeight();
