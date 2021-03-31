@@ -87,6 +87,7 @@ namespace Procedures {
     void ProcessInputs();
     void ProcessRocks();
     void ProcessProjectiles();
+    void ProcessCollisions();
     void DrawShip();
     void DrawAsteroids();
     void DrawProjectiles();
@@ -151,6 +152,7 @@ bool Asteroids::OnUserUpdate(float deltaTime) {
     Procedures::ProcessInputs();
     Procedures::ProcessProjectiles();
     Procedures::ProcessRocks();
+    Procedures::ProcessCollisions();
     Procedures::DrawShip();
     Procedures::DrawAsteroids();
     Procedures::DrawProjectiles();
@@ -211,6 +213,24 @@ void Procedures::ProcessProjectiles() {
     for (int i = 0; i < PROJECTILE_POOL_SIZE; ++i) {
         Projectile& self = asteroids->projectiles[i];
         self.transform.position += self.velocity * asteroids->deltaTime;
+    }
+}
+
+void Procedures::ProcessCollisions() {
+    // Doesn't handle ship collisions yet
+    for (int i = 0; i < BIG_ROCKS_N; i++) {
+        Rock& rock = asteroids->rocks[i];
+        for (int j = 0; j < PROJECTILE_POOL_SIZE; j++) {
+            Projectile& projectile = asteroids->projectiles[j];
+
+            if (projectile.transform && rock.transform && (bool)(rock.size)) {
+                //                   ^ custom operator  ^ ordinary boolean AND
+                
+                // Kill both rock and projectile
+                rock.size = Rock::Size::NONE;
+                projectile.transform.radius = 0;
+            }
+        }
     }
 }
 
