@@ -7,10 +7,11 @@
 // BIG_RADIUS = BIG_ASTEROID_RADIUS
 // AVERAGE_RADIUS = BIG_RADIUS / 2
 // SMOLL_RADIUS = AVERAGE_RADIUS / 4 ?
-
-#define BIG_ASTEROID_RADIUS 16
+#define BIG_ROCK_RADIUS 16
 // Amount of steps taken to draw the big asteroid 
-#define BIG_ASTEROID_STEPS 12
+#define BIG_ROCK_STEPS 12
+// Amount of big asteroids
+#define BIG_ROCKS_N 16
 
 struct Transform {
     olc::vf2d position;
@@ -33,10 +34,33 @@ struct Ship {
     } stats;
 };
 
+struct Rock {
+    Transform transform;
+    olc::vf2d velocity;
+
+    static const Rock null;
+
+    // *softly* The chonk chart
+    enum struct Size : char {
+        NONE = 0, // indicated that the asteroid is none existent
+        BIG = 1,
+        AVERAGE = 2,
+        SMALL = 3
+    } size;
+
+    Rock() : transform({ {0, 0}, 0, 0 }), velocity({ 0, 0 }), size(Rock::Size::NONE) {};
+    Rock(Transform transform, olc::vf2d velocity, Rock::Size size = Rock::Size::NONE) : transform(transform), velocity(velocity), size(size) {}
+
+};
+
+inline const Rock Rock::null = Rock({ { {0, 0}, 0, 0 }, { 0, 0 } });
+
 struct Asteroids : public olc::PixelGameEngine {
+    Rock rocks[BIG_ROCKS_N];
     float deltaTime;
     Ship ship;
-
+    
+    Asteroids() = default;
     olc::vf2d ScreenCenter();
     void RotateVector(olc::vf2d& target, olc::vf2d around, float angle);
     bool OnUserCreate() override;
@@ -58,6 +82,8 @@ bool Transform::operator&&(Transform& other) {
 
 bool Asteroids::OnUserCreate() {
     asteroids = this;
+
+    asteroids->rocks[0] = Rock({ ScreenCenter() }, { 0, 0 }, Rock::Size::BIG);
     asteroids->ship.transform.position = asteroids->ScreenCenter();
     asteroids->ship.dimensions = { 7, 10 };
     asteroids->ship.transform.radius = asteroids->ship.dimensions.x < asteroids->ship.dimensions.y ? asteroids->ship.dimensions.x : asteroids->ship.dimensions.y;
@@ -182,20 +208,23 @@ void Procedures::DrawShip() {
 void Procedures::DrawAsteroids() {
     // Drawing is done in steps and every iteration we rotate the current vector by this 
     // to achieve rotation
-    float step = 6.28319 / BIG_ASTEROID_STEPS /* rad */;
+    float step = 6.28319 / BIG_ROCK_STEPS /* rad */;
+    Rock* rocks = asteroids->rocks;
     
-    // The loop starts with previous so it is our initial position
-    olc::vf2d previous = { 0, BIG_ASTEROID_RADIUS };
-    olc::vf2d current;
+    for (int i = 0; i < BIG_ROCKS_N && (bool)(asteroids->rocks[i].size); ++i) {
+        // The loop starts with previous so it is our initial position
+        olc::vf2d previous = { 0, BIG_ROCK_RADIUS };
+        olc::vf2d current;
 
-    // For now just draw one
-    for (int i = 0; i < BIG_ASTEROID_STEPS; i++) {
-        current = previous;
-        asteroids->RotateVector(current, { 0, 0 }, step);
-        asteroids->DrawLine(
-            previous + asteroids->ScreenCenter(), 
-            current + asteroids->ScreenCenter(), olc::GREY);
-        previous = current;
+        // For now just draw one
+        for (int ii = 0; ii < BIG_ROCK_STEPS; ii++) {
+            current = previous;
+            asteroids->RotateVector(current, { 0, 0 }, step);
+            asteroids->DrawLine(
+                previous + rocks[i].transform.position,
+                current + rocks[i].transform.position, olc::GREY);
+            previous = current;
+        }
     }
 }
 
