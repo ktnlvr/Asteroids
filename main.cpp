@@ -317,7 +317,8 @@ void Procedures::DrawShip() {
         bool isColliding = false;
 
         for (int ii = 0; ii < BIG_ROCKS_N; ++ii) 
-            isColliding |= asteroids->rocks[ii].transform && (ship.transform);
+            isColliding |= asteroids->rocks[ii].transform && ship.transform && (bool)(asteroids->rocks[ii].size);
+            //                                             ^ custom operator ^ ordinary boolean AND
 
         asteroids->DrawCircle(center, transform.radius, isColliding ? olc::RED : olc::GREEN);
 #endif
