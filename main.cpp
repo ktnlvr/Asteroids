@@ -189,7 +189,7 @@ void Procedures::ProcessInputs() {
     ship.velocity += forward * ship.stats.movementSpeed * (asteroids->GetKey(olc::Key::S).bHeld - asteroids->GetKey(olc::Key::W).bHeld) * asteroids->deltaTime;
     
     if (asteroids->GetKey(olc::Key::SPACE).bPressed) {
-        asteroids->SummonProjectile(ship.transform.position + forward * ship.transform.radius, -forward * ship.stats.projectileSpeed);
+        asteroids->SummonProjectile(ship.transform.position, -forward * ship.stats.projectileSpeed);
     }
 
     // Since drag hasn't made it yet, just use this
