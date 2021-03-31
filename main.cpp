@@ -121,12 +121,27 @@ void Procedures::DrawShip() {
     asteroids->RotateVector(c, center, transform->rotation);
     asteroids->RotateVector(direction, olc::vf2d{ 0, 0 }, transform->rotation /* rad */);
 
-    asteroids->DrawLine(center, center - direction * 16, olc::RED);
-    asteroids->DrawCircle(center, transform->radius, olc::GREEN);
-    asteroids->DrawLine(a, b);
-    asteroids->DrawLine(b, d);
-    asteroids->DrawLine(d, c);
-    asteroids->DrawLine(c, a);
+    // No need for spaghetti ifs, draw all of them
+    // Too many draw calls is the exact amount of draw calls needed
+    // KISS
+    olc::vi2d offsets[5] = {
+        olc::vi2d { 0, 0 },
+        olc::vi2d { 0, asteroids->ScreenHeight() },
+        olc::vi2d { asteroids->ScreenWidth(), 0 },
+        olc::vi2d { 0, -asteroids->ScreenHeight() },
+        olc::vi2d { -asteroids->ScreenWidth(), 0 },
+    };
+
+    for (int i = 0; i < 5; i++) {
+        olc::vi2d offset = offsets[i];
+        asteroids->DrawLine(center + offset, center - direction * 16 + offset, olc::RED);
+        asteroids->DrawCircle(center + offset, transform->radius, olc::GREEN);
+        asteroids->DrawLine(a + offset, b + offset);
+        asteroids->DrawLine(b + offset, d + offset);
+        asteroids->DrawLine(d + offset, c + offset);
+        asteroids->DrawLine(c + offset, a + offset);
+    }
+
 }
 
 
