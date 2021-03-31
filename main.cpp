@@ -3,6 +3,15 @@
 
 #define OK 1
 
+// Radius of the biggest asteroid
+// BIG_RADIUS = BIG_ASTEROID_RADIUS
+// AVERAGE_RADIUS = BIG_RADIUS / 2
+// SMOLL_RADIUS = AVERAGE_RADIUS / 4 ?
+
+#define BIG_ASTEROID_RADIUS 16
+// Amount of steps taken to draw the big asteroid 
+#define BIG_ASTEROID_STEPS 12
+
 struct Transform {
     olc::vf2d position;
     float radius;
@@ -28,6 +37,7 @@ struct Asteroids : public olc::PixelGameEngine {
     float deltaTime;
     Ship ship;
 
+    olc::vf2d ScreenCenter();
     void RotateVector(olc::vf2d& target, olc::vf2d around, float angle);
     bool OnUserCreate() override;
     bool OnUserUpdate(float) override;
@@ -38,6 +48,7 @@ static Asteroids* asteroids;
 namespace Procedures {
     void ProcessInputs();
     void DrawShip();
+    void DrawAsteroids();
 }
 
 
@@ -47,7 +58,7 @@ bool Transform::operator&&(Transform& other) {
 
 bool Asteroids::OnUserCreate() {
     asteroids = this;
-    asteroids->ship.transform.position = { (float)asteroids->ScreenWidth() / 2, (float)asteroids->ScreenHeight() / 2 };
+    asteroids->ship.transform.position = asteroids->ScreenCenter();
     asteroids->ship.dimensions = { 7, 10 };
     asteroids->ship.transform.radius = asteroids->ship.dimensions.x < asteroids->ship.dimensions.y ? asteroids->ship.dimensions.x : asteroids->ship.dimensions.y;
 
@@ -59,12 +70,16 @@ bool Asteroids::OnUserCreate() {
     return OK;
 }
 
+inline olc::vf2d Asteroids::ScreenCenter() {
+    return { (float)ScreenWidth() / 2, (float)ScreenHeight() / 2 };
+}
+
 bool Asteroids::OnUserUpdate(float deltaTime) {
     this->deltaTime = deltaTime;
 
     Clear(olc::BLACK);
     Procedures::ProcessInputs();
-    Procedures::DrawShip();
+    Procedures::DrawAsteroids();
 
     return OK;
 }
@@ -163,6 +178,27 @@ void Procedures::DrawShip() {
     }
 
 }
+
+void Procedures::DrawAsteroids() {
+    // Drawing is done in steps and every iteration we rotate the current vector by this 
+    // to achieve rotation
+    float step = 6.28319 / BIG_ASTEROID_STEPS /* rad */;
+    
+    // The loop starts with previous so it is our initial position
+    olc::vf2d previous = { 0, BIG_ASTEROID_RADIUS };
+    olc::vf2d current;
+
+    // For now just draw one
+    for (int i = 0; i < BIG_ASTEROID_STEPS; i++) {
+        current = previous;
+        asteroids->RotateVector(current, { 0, 0 }, step);
+        asteroids->DrawLine(
+            previous + asteroids->ScreenCenter(), 
+            current + asteroids->ScreenCenter(), olc::GREY);
+        previous = current;
+    }
+}
+
 
 
 int main(int argc, char* argv[]) {
