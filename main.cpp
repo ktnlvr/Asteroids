@@ -17,6 +17,18 @@
 // Radius of one projectile
 #define PROJECTILE_RADIUS 2
 
+
+struct Palette {
+    olc::Pixel background, ship, asteroid, projectile;
+};
+
+Palette palettes[1] = {
+    { olc::BLACK, olc::WHITE, olc::WHITE, olc::WHITE } // contrast
+};
+
+Palette* palette;
+
+
 struct Transform {
     olc::vf2d position;
     float radius;
@@ -102,6 +114,7 @@ bool Transform::operator&&(Transform& other) {
 
 bool Asteroids::OnUserCreate() {
     asteroids = this;
+    palette = &palettes[0];
 
     Ship& ship = asteroids->ship;
 
@@ -148,7 +161,7 @@ inline void WrapPosition(olc::vf2d& v) {
 bool Asteroids::OnUserUpdate(float deltaTime) {
     this->deltaTime = deltaTime;
 
-    Clear(olc::BLACK);
+    Clear(palette->background);
     Procedures::ProcessInputs();
     Procedures::ProcessProjectiles();
     Procedures::ProcessRocks();
@@ -299,7 +312,7 @@ void Procedures::DrawShip() {
 
 #ifndef NDEBUG
         // Debug direction and collision radius
-        asteroids->DrawLine(center, center - direction * 16, olc::DARK_GREY);
+        asteroids->DrawLine(center, center - direction * 16, olc::MAGENTA);
 
         bool isColliding = false;
 
@@ -314,10 +327,10 @@ void Procedures::DrawShip() {
     for (int i = 0; i < 9; i++) {
         olc::vi2d offset = offsets[i];
 
-        asteroids->DrawLine(a + offset, b + offset);
-        asteroids->DrawLine(b + offset, d + offset);
-        asteroids->DrawLine(d + offset, c + offset);
-        asteroids->DrawLine(c + offset, a + offset);
+        asteroids->DrawLine(a + offset, b + offset, palette->ship);
+        asteroids->DrawLine(b + offset, d + offset, palette->ship);
+        asteroids->DrawLine(d + offset, c + offset, palette->ship);
+        asteroids->DrawLine(c + offset, a + offset, palette->ship);
     }
 
 }
@@ -341,7 +354,8 @@ void Procedures::DrawAsteroids() {
             asteroids->RotateVector(current, { 0, 0 }, step * ii + rocks[i].transform.rotation);
             asteroids->DrawLine(
                 current + rocks[i].transform.position,
-                previous + rocks[i].transform.position
+                previous + rocks[i].transform.position,
+                palette->asteroid
             );
             previous = current;
         }
@@ -351,7 +365,7 @@ void Procedures::DrawAsteroids() {
 void Procedures::DrawProjectiles() {
     for (int i = 0; i < PROJECTILE_POOL_SIZE; ++i) {
         Projectile& self = asteroids->projectiles[i];
-        asteroids->DrawCircle(self.transform.position, self.transform.radius, olc::GREY);
+        asteroids->DrawCircle(self.transform.position, self.transform.radius, palette->projectile);
     }
 }
 
