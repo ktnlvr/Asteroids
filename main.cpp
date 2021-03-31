@@ -126,13 +126,21 @@ void Asteroids::RotateVector(olc::vf2d& target, olc::vf2d around, float angle) {
 }
 
 void Procedures::ProcessInputs() {
+    /// Rotation is done with A and D keys, can be 0, -1 and 1
     asteroids->ship.transform.rotation += (asteroids->GetKey(olc::Key::D).bHeld - asteroids->GetKey(olc::Key::A).bHeld) * asteroids->deltaTime * asteroids->ship.stats.rotationSpeed;
 
+    // Forward direction is up vector (cuz the ship is facing up by default) rotated by ship's rotation
     olc::vf2d forward = { 0, 1 };
     asteroids->RotateVector(forward, olc::vf2d(0, 0), asteroids->ship.transform.rotation);
+
+    // Velocity is controlled with S and W, can also be 0, -1 and 1
     asteroids->ship.velocity += forward * asteroids->ship.stats.movementSpeed * (asteroids->GetKey(olc::Key::S).bHeld - asteroids->GetKey(olc::Key::W).bHeld) * asteroids->deltaTime;
+    
+    // Since drag hasn't made it yet, just use this
     asteroids->ship.transform.position += asteroids->ship.velocity;
     asteroids->ship.velocity = { 0, 0 };
+
+    // Wrap the ship, doesn't apply to anything else
 
     if (asteroids->ship.transform.position.y > asteroids->ScreenHeight())
         asteroids->ship.transform.position.y -= asteroids->ScreenHeight();
@@ -146,16 +154,33 @@ void Procedures::ProcessInputs() {
 }
 
 void Procedures::DrawShip() {
+    /* Ship vertices layout
+    
+           ^ direction
+           |
+           a
+          /|\
+         / | \
+        /  |  \
+       /__/-\__\
+      //   d   \\
+      ^         ^
+      b         c
+
+    */
+
     olc::vf2d a, b, c, d, direction = { 0, 1 };
     olc::vf2d center = asteroids->ship.transform.position;
     Transform* transform = &asteroids->ship.transform;
     olc::vf2d* dimension = &asteroids->ship.dimensions;
 
+    // It is a bit unordinary, but it has it's own proportions
     a = { center.x, center.y - (float) asteroids->ship.dimensions.y / 2};
     d = { center.x, center.y + (float) asteroids->ship.dimensions.y / 3 };
     b = { center.x - (float)asteroids->ship.dimensions.x / 2, center.y + (float)asteroids->ship.dimensions.y / 2 };
     c = { center.x + (float)asteroids->ship.dimensions.x / 2, center.y + (float)asteroids->ship.dimensions.y / 2 };
 
+    // Rotate all the triangle points
     asteroids->RotateVector(a, center, transform->rotation);
     asteroids->RotateVector(d, center, transform->rotation);
     asteroids->RotateVector(b, center, transform->rotation);
@@ -189,11 +214,13 @@ void Procedures::DrawShip() {
         olc::vi2d { -asteroids->ScreenWidth(), -asteroids->ScreenHeight() },
     };
 
-    // might as well unroll this
+    // Might as well unroll this
     #pragma unroll (9)
     for (int i = 0; i < 9; i++) {
         olc::vi2d offset = offsets[i];
+
 #ifndef NDEBUG
+        // Debug direction and collision radius
         asteroids->DrawLine(center + offset, center - direction * 16 + offset, olc::RED);
         asteroids->DrawCircle(center + offset, transform->radius, olc::GREEN);
 #endif
@@ -216,7 +243,7 @@ void Procedures::DrawAsteroids() {
         olc::vf2d previous = { 0, BIG_ROCK_RADIUS };
         olc::vf2d current;
 
-        // For now just draw one
+        // Move thru all the vertices one by one connecting them
         for (int ii = 0; ii < BIG_ROCK_STEPS; ii++) {
             current = previous;
             asteroids->RotateVector(current, { 0, 0 }, step);
