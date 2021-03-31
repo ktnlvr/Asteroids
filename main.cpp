@@ -124,15 +124,33 @@ void Procedures::DrawShip() {
     // No need for spaghetti ifs, draw all of them
     // Too many draw calls is the exact amount of draw calls needed
     // KISS
-    olc::vi2d offsets[5] = {
+
+    /* The resulting grid of fake ships
+        x - real
+        o - fake
+
+        o -- o -- o
+        :    :    :
+        o -- x -- o
+        :    :    :
+        o -- o -- o
+    */
+
+    olc::vi2d offsets[9] = {
         olc::vi2d { 0, 0 },
         olc::vi2d { 0, asteroids->ScreenHeight() },
         olc::vi2d { asteroids->ScreenWidth(), 0 },
         olc::vi2d { 0, -asteroids->ScreenHeight() },
         olc::vi2d { -asteroids->ScreenWidth(), 0 },
+        olc::vi2d { asteroids->ScreenWidth(), asteroids->ScreenHeight() },
+        olc::vi2d { asteroids->ScreenWidth(), -asteroids->ScreenHeight() },
+        olc::vi2d { -asteroids->ScreenWidth(), asteroids->ScreenHeight() },
+        olc::vi2d { -asteroids->ScreenWidth(), -asteroids->ScreenHeight() },
     };
 
-    for (int i = 0; i < 5; i++) {
+    // might as well unroll this
+    #pragma unroll (9)
+    for (int i = 0; i < 9; i++) {
         olc::vi2d offset = offsets[i];
         asteroids->DrawLine(center + offset, center - direction * 16 + offset, olc::RED);
         asteroids->DrawCircle(center + offset, transform->radius, olc::GREEN);
