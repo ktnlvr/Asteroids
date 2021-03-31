@@ -56,6 +56,8 @@ bool Asteroids::OnUserCreate() {
     asteroids->ship.stats.rotationSpeed = 5;
     asteroids->ship.stats.movementSpeed = 300;
 
+    asteroids->sAppName = "Asteroids (by Kittenlover229)";
+
     return OK;
 }
 
