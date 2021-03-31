@@ -71,6 +71,7 @@ static Asteroids* asteroids;
 
 namespace Procedures {
     void ProcessInputs();
+    void ProcessRocks();
     void DrawShip();
     void DrawAsteroids();
 }
@@ -83,7 +84,7 @@ bool Transform::operator&&(Transform& other) {
 bool Asteroids::OnUserCreate() {
     asteroids = this;
 
-    asteroids->rocks[0] = Rock({ ScreenCenter() }, { 0, 0 }, Rock::Size::BIG);
+    asteroids->rocks[0] = Rock({ ScreenCenter() }, { 0, 20 }, Rock::Size::BIG);
     asteroids->ship.transform.position = asteroids->ScreenCenter();
     asteroids->ship.dimensions = { 7, 10 };
     asteroids->ship.transform.radius = asteroids->ship.dimensions.x < asteroids->ship.dimensions.y ? asteroids->ship.dimensions.x : asteroids->ship.dimensions.y;
@@ -105,6 +106,7 @@ bool Asteroids::OnUserUpdate(float deltaTime) {
 
     Clear(olc::BLACK);
     Procedures::ProcessInputs();
+    Procedures::ProcessRocks();
     Procedures::DrawAsteroids();
 
     return OK;
@@ -151,6 +153,12 @@ void Procedures::ProcessInputs() {
         asteroids->ship.transform.position.x -= asteroids->ScreenWidth();
     else if (asteroids->ship.transform.position.x < 0)
         asteroids->ship.transform.position.x += asteroids->ScreenWidth();
+}
+
+void Procedures::ProcessRocks() {
+    for (int i = 0; i < BIG_ROCKS_N && (bool)(asteroids->rocks[i].size); ++i) {
+        asteroids->rocks[i].transform.position += asteroids->rocks[i].velocity * asteroids->deltaTime;
+    }
 }
 
 void Procedures::DrawShip() {
