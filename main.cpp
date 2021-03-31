@@ -101,12 +101,25 @@ inline olc::vf2d Asteroids::ScreenCenter() {
     return { (float)ScreenWidth() / 2, (float)ScreenHeight() / 2 };
 }
 
+inline void WrapPosition(olc::vf2d& v) {
+    if (v.y > asteroids->ScreenHeight())
+        v.y -= asteroids->ScreenHeight();
+    else if (v.y < 0)
+        v.y += asteroids->ScreenHeight();
+
+    if (v.x > asteroids->ScreenWidth())
+        v.x -= asteroids->ScreenWidth();
+    else if (v.x < 0)
+        v.x += asteroids->ScreenWidth();
+}
+
 bool Asteroids::OnUserUpdate(float deltaTime) {
     this->deltaTime = deltaTime;
 
     Clear(olc::BLACK);
     Procedures::ProcessInputs();
     Procedures::ProcessRocks();
+    Procedures::DrawShip();
     Procedures::DrawAsteroids();
 
     return OK;
@@ -143,21 +156,13 @@ void Procedures::ProcessInputs() {
     asteroids->ship.velocity = { 0, 0 };
 
     // Wrap the ship, doesn't apply to anything else
-
-    if (asteroids->ship.transform.position.y > asteroids->ScreenHeight())
-        asteroids->ship.transform.position.y -= asteroids->ScreenHeight();
-    else if (asteroids->ship.transform.position.y < 0)
-        asteroids->ship.transform.position.y += asteroids->ScreenHeight();
-
-    if (asteroids->ship.transform.position.x > asteroids->ScreenWidth())
-        asteroids->ship.transform.position.x -= asteroids->ScreenWidth();
-    else if (asteroids->ship.transform.position.x < 0)
-        asteroids->ship.transform.position.x += asteroids->ScreenWidth();
+    WrapPosition(asteroids->ship.transform.position);
 }
 
 void Procedures::ProcessRocks() {
     for (int i = 0; i < BIG_ROCKS_N && (bool)(asteroids->rocks[i].size); ++i) {
         asteroids->rocks[i].transform.position += asteroids->rocks[i].velocity * asteroids->deltaTime;
+        WrapPosition(asteroids->rocks[i].transform.position);
     }
 }
 
