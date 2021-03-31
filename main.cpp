@@ -261,7 +261,7 @@ void Procedures::DrawAsteroids() {
     Rock* rocks = asteroids->rocks;
     
     for (int i = 0; i < BIG_ROCKS_N && (bool)(asteroids->rocks[i].size); ++i) {
-        float step = (6.28319 + 0.07) / BIG_ROCK_STEPS /* rad */;
+        float step = 6.28319 / BIG_ROCK_STEPS /* rad */;
         // The loop starts with previous so it is our initial position
         olc::vf2d start = { 0, rocks[i].transform.radius };
         olc::vf2d previous = start;
