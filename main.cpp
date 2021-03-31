@@ -102,14 +102,18 @@ bool Transform::operator&&(Transform& other) {
 bool Asteroids::OnUserCreate() {
     asteroids = this;
 
-    asteroids->rocks[0] = Rock({ ScreenCenter(), BIG_ROCK_RADIUS }, { 0, 20 }, Rock::Size::BIG);
-    asteroids->ship.transform.position = asteroids->ScreenCenter();
-    asteroids->ship.dimensions = { 7, 10 };
-    asteroids->ship.transform.radius = asteroids->ship.dimensions.x < asteroids->ship.dimensions.y ? asteroids->ship.dimensions.x : asteroids->ship.dimensions.y;
+    Ship& ship = asteroids->ship;
 
-    asteroids->ship.stats.rotationSpeed = 5;
-    asteroids->ship.stats.movementSpeed = 300;
-    asteroids->ship.stats.projectileSpeed = 500;
+    asteroids->rocks[0] = Rock({ ScreenCenter(), BIG_ROCK_RADIUS }, { 0, 20 }, Rock::Size::BIG);
+    ship.transform.position = asteroids->ScreenCenter();
+    ship.dimensions = { 7, 10 };
+
+    // Choose the highest of two for the collision radius
+    ship.transform.radius = ship.dimensions.x < ship.dimensions.y ? ship.dimensions.x : ship.dimensions.y;
+
+    ship.stats.rotationSpeed = 5;
+    ship.stats.movementSpeed = 300;
+    ship.stats.projectileSpeed = 500;
 
     asteroids->sAppName = "Asteroids (by Kittenlover229)";
 
@@ -170,33 +174,36 @@ void Asteroids::RotateVector(olc::vf2d& target, olc::vf2d around, float angle) {
 }
 
 void Procedures::ProcessInputs() {
+    Ship& ship = asteroids->ship;
+
     /// Rotation is done with A and D keys, can be 0, -1 and 1
-    asteroids->ship.transform.rotation += (asteroids->GetKey(olc::Key::D).bHeld - asteroids->GetKey(olc::Key::A).bHeld) * asteroids->deltaTime * asteroids->ship.stats.rotationSpeed;
+    ship.transform.rotation += (asteroids->GetKey(olc::Key::D).bHeld - asteroids->GetKey(olc::Key::A).bHeld) * asteroids->deltaTime * ship.stats.rotationSpeed;
 
     // Forward direction is up vector (cuz the ship is facing up by default) rotated by ship's rotation
     olc::vf2d forward = { 0, 1 };
-    asteroids->RotateVector(forward, olc::vf2d(0, 0), asteroids->ship.transform.rotation);
+    asteroids->RotateVector(forward, olc::vf2d(0, 0), ship.transform.rotation);
 
     // Velocity is controlled with S and W, can also be 0, -1 and 1
-    asteroids->ship.velocity += forward * asteroids->ship.stats.movementSpeed * (asteroids->GetKey(olc::Key::S).bHeld - asteroids->GetKey(olc::Key::W).bHeld) * asteroids->deltaTime;
+    ship.velocity += forward * ship.stats.movementSpeed * (asteroids->GetKey(olc::Key::S).bHeld - asteroids->GetKey(olc::Key::W).bHeld) * asteroids->deltaTime;
     
     if (asteroids->GetKey(olc::Key::SPACE).bPressed) {
-        asteroids->SummonProjectile(asteroids->ship.transform.position + forward * asteroids->ship.transform.radius, -forward * asteroids->ship.stats.projectileSpeed);
+        asteroids->SummonProjectile(ship.transform.position + forward * ship.transform.radius, -forward * ship.stats.projectileSpeed);
     }
 
     // Since drag hasn't made it yet, just use this
-    asteroids->ship.transform.position += asteroids->ship.velocity;
-    asteroids->ship.velocity = { 0, 0 };
+    ship.transform.position += ship.velocity;
+    ship.velocity = { 0, 0 };
 
     // Wrap the ship, doesn't apply to anything else
-    WrapPosition(asteroids->ship.transform.position);
+    WrapPosition(ship.transform.position);
 }
 
 void Procedures::ProcessRocks() {
     for (int i = 0; i < BIG_ROCKS_N && (bool)(asteroids->rocks[i].size); ++i) {
-        asteroids->rocks[i].transform.position += asteroids->rocks[i].velocity * asteroids->deltaTime;
-        WrapPosition(asteroids->rocks[i].transform.position);
-        asteroids->rocks[i].transform.rotation += asteroids->rocks[i].velocity.mag() / asteroids->rocks[i].transform.radius * asteroids->deltaTime;
+        Rock& rock = asteroids->rocks[i];
+        rock.transform.position += rock.velocity * asteroids->deltaTime;
+        WrapPosition(rock.transform.position);
+        rock.transform.rotation += rock.velocity.mag() / rock.transform.radius * asteroids->deltaTime;
     }
 }
 
@@ -224,22 +231,24 @@ void Procedures::DrawShip() {
     */
 
     olc::vf2d a, b, c, d, direction = { 0, 1 };
-    olc::vf2d center = asteroids->ship.transform.position;
-    Transform* transform = &asteroids->ship.transform;
-    olc::vf2d* dimension = &asteroids->ship.dimensions;
+
+    Ship& ship = asteroids->ship;
+    olc::vf2d center = ship.transform.position;
+    Transform& transform = ship.transform;
+    olc::vf2d& dimension = ship.dimensions;
 
     // It is a bit unordinary, but it has it's own proportions
-    a = { center.x, center.y - (float) asteroids->ship.dimensions.y / 2};
-    d = { center.x, center.y + (float) asteroids->ship.dimensions.y / 3 };
-    b = { center.x - (float)asteroids->ship.dimensions.x / 2, center.y + (float)asteroids->ship.dimensions.y / 2 };
-    c = { center.x + (float)asteroids->ship.dimensions.x / 2, center.y + (float)asteroids->ship.dimensions.y / 2 };
+    a = { center.x, center.y - (float) ship.dimensions.y / 2};
+    d = { center.x, center.y + (float) ship.dimensions.y / 3 };
+    b = { center.x - (float)ship.dimensions.x / 2, center.y + (float)ship.dimensions.y / 2 };
+    c = { center.x + (float)ship.dimensions.x / 2, center.y + (float)ship.dimensions.y / 2 };
 
     // Rotate all the triangle points
-    asteroids->RotateVector(a, center, transform->rotation);
-    asteroids->RotateVector(d, center, transform->rotation);
-    asteroids->RotateVector(b, center, transform->rotation);
-    asteroids->RotateVector(c, center, transform->rotation);
-    asteroids->RotateVector(direction, olc::vf2d{ 0, 0 }, transform->rotation /* rad */);
+    olc::vf2d* points[4] = { &a, &b, &c, &d };
+    for (int i = 0; i < 4; i++)
+        asteroids->RotateVector(*points[i], center, transform.rotation);
+
+    asteroids->RotateVector(direction, olc::vf2d{ 0, 0 }, transform.rotation /* rad */);
 
     // No need for spaghetti ifs, draw all of them
     // Too many draw calls is the exact amount of draw calls needed
@@ -275,9 +284,9 @@ void Procedures::DrawShip() {
         bool isColliding = false;
 
         for (int ii = 0; ii < BIG_ROCKS_N; ++ii) 
-            isColliding |= asteroids->rocks[ii].transform && (asteroids->ship.transform);
+            isColliding |= asteroids->rocks[ii].transform && (ship.transform);
 
-        asteroids->DrawCircle(center, transform->radius, isColliding ? olc::RED : olc::GREEN);
+        asteroids->DrawCircle(center, transform.radius, isColliding ? olc::RED : olc::GREEN);
 #endif
 
     // Might as well unroll this
