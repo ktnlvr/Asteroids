@@ -152,8 +152,10 @@ void Procedures::DrawShip() {
     #pragma unroll (9)
     for (int i = 0; i < 9; i++) {
         olc::vi2d offset = offsets[i];
+#ifndef NDEBUG
         asteroids->DrawLine(center + offset, center - direction * 16 + offset, olc::RED);
         asteroids->DrawCircle(center + offset, transform->radius, olc::GREEN);
+#endif
         asteroids->DrawLine(a + offset, b + offset);
         asteroids->DrawLine(b + offset, d + offset);
         asteroids->DrawLine(d + offset, c + offset);
