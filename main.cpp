@@ -12,11 +12,14 @@
 #define BIG_ROCK_STEPS 16
 // Amount of big asteroids
 #define BIG_ROCKS_N 16
+// Maximum amount of projectiles to be alive
+#define PROJECTILE_POOL_SIZE 32
+// Radius of one projectile
+#define PROJECTILE_RADIUS 2
 
 struct Transform {
     olc::vf2d position;
     float radius;
-    // Rotation in radians!
     float rotation;
 
     // Is colliding with other
@@ -31,6 +34,7 @@ struct Ship {
     struct Stats {
         float rotationSpeed;
         float movementSpeed;
+        float projectileSpeed;
     } stats;
 };
 
@@ -53,16 +57,26 @@ struct Rock {
 
 };
 
+struct Projectile {
+    Transform transform;
+    olc::vf2d velocity;
+};
+
 inline const Rock Rock::null = Rock({ { {0, 0}, 0, 0 }, { 0, 0 } });
 
 struct Asteroids : public olc::PixelGameEngine {
     Rock rocks[BIG_ROCKS_N];
+
+    Projectile projectiles[PROJECTILE_POOL_SIZE];
+    size_t projectileStackCounter = 0;
+
     float deltaTime;
     Ship ship;
     
     Asteroids() = default;
     olc::vf2d ScreenCenter();
     void RotateVector(olc::vf2d& target, olc::vf2d around, float angle);
+    void SummonProjectile(olc::vf2d position, olc::vf2d velocity);
     bool OnUserCreate() override;
     bool OnUserUpdate(float) override;
 };
@@ -72,8 +86,10 @@ static Asteroids* asteroids;
 namespace Procedures {
     void ProcessInputs();
     void ProcessRocks();
+    void ProcessProjectiles();
     void DrawShip();
     void DrawAsteroids();
+    void DrawProjectiles();
 }
 
 
@@ -93,6 +109,7 @@ bool Asteroids::OnUserCreate() {
 
     asteroids->ship.stats.rotationSpeed = 5;
     asteroids->ship.stats.movementSpeed = 300;
+    asteroids->ship.stats.projectileSpeed = 500;
 
     asteroids->sAppName = "Asteroids (by Kittenlover229)";
 
@@ -101,6 +118,14 @@ bool Asteroids::OnUserCreate() {
 
 inline olc::vf2d Asteroids::ScreenCenter() {
     return { (float)ScreenWidth() / 2, (float)ScreenHeight() / 2 };
+}
+
+void Asteroids::SummonProjectile(olc::vf2d position, olc::vf2d velocity) {
+    Projectile* bullet = &projectiles[(++projectileStackCounter) % PROJECTILE_POOL_SIZE];
+
+    bullet->transform.position = position;
+    bullet->transform.radius = PROJECTILE_RADIUS;
+    bullet->velocity = velocity;
 }
 
 inline void WrapPosition(olc::vf2d& v) {
@@ -120,9 +145,11 @@ bool Asteroids::OnUserUpdate(float deltaTime) {
 
     Clear(olc::BLACK);
     Procedures::ProcessInputs();
+    Procedures::ProcessProjectiles();
     Procedures::ProcessRocks();
     Procedures::DrawShip();
     Procedures::DrawAsteroids();
+    Procedures::DrawProjectiles();
 
     return OK;
 }
@@ -153,6 +180,10 @@ void Procedures::ProcessInputs() {
     // Velocity is controlled with S and W, can also be 0, -1 and 1
     asteroids->ship.velocity += forward * asteroids->ship.stats.movementSpeed * (asteroids->GetKey(olc::Key::S).bHeld - asteroids->GetKey(olc::Key::W).bHeld) * asteroids->deltaTime;
     
+    if (asteroids->GetKey(olc::Key::SPACE).bPressed) {
+        asteroids->SummonProjectile(asteroids->ship.transform.position + forward * asteroids->ship.transform.radius, -forward * asteroids->ship.stats.projectileSpeed);
+    }
+
     // Since drag hasn't made it yet, just use this
     asteroids->ship.transform.position += asteroids->ship.velocity;
     asteroids->ship.velocity = { 0, 0 };
@@ -166,6 +197,13 @@ void Procedures::ProcessRocks() {
         asteroids->rocks[i].transform.position += asteroids->rocks[i].velocity * asteroids->deltaTime;
         WrapPosition(asteroids->rocks[i].transform.position);
         asteroids->rocks[i].transform.rotation += asteroids->rocks[i].velocity.mag() / asteroids->rocks[i].transform.radius * asteroids->deltaTime;
+    }
+}
+
+void Procedures::ProcessProjectiles() {
+    for (int i = 0; i < PROJECTILE_POOL_SIZE; ++i) {
+        Projectile& self = asteroids->projectiles[i];
+        self.transform.position += self.velocity * asteroids->deltaTime;
     }
 }
 
@@ -278,6 +316,13 @@ void Procedures::DrawAsteroids() {
             );
             previous = current;
         }
+    }
+}
+
+void Procedures::DrawProjectiles() {
+    for (int i = 0; i < PROJECTILE_POOL_SIZE; ++i) {
+        Projectile& self = asteroids->projectiles[i];
+        asteroids->DrawCircle(self.transform.position, self.transform.radius, olc::GREY);
     }
 }
 
