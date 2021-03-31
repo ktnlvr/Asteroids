@@ -1,5 +1,3 @@
-#include <iostream>
-
 #define OLC_PGE_APPLICATION
 #include "olcPixelGameEngine.h"
 
@@ -50,7 +48,7 @@ bool Transform::operator&&(Transform& other) {
 bool Asteroids::OnUserCreate() {
     asteroids = this;
     asteroids->ship.transform.position = { (float)asteroids->ScreenWidth() / 2, (float)asteroids->ScreenHeight() / 2 };
-    asteroids->ship.dimensions = { 14, 20 };
+    asteroids->ship.dimensions = { 7, 10 };
     asteroids->ship.transform.radius = asteroids->ship.dimensions.x < asteroids->ship.dimensions.y ? asteroids->ship.dimensions.x : asteroids->ship.dimensions.y;
 
     asteroids->ship.stats.rotationSpeed = 5;
@@ -168,7 +166,7 @@ void Procedures::DrawShip() {
 int main(int argc, char* argv[]) {
     Asteroids asteroids = Asteroids();
 
-    if (asteroids.Construct(512, 512, 1, 1))
+    if (asteroids.Construct(256, 256, 2, 2))
         asteroids.Start();
 
     return 0;
