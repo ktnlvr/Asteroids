@@ -280,10 +280,13 @@ void Procedures::DrawAsteroids() {
 
 
 int main(int argc, char* argv[]) {
-    Asteroids asteroids = Asteroids();
+    std::thread thread = std::thread([]() {
+        Asteroids asteroids = Asteroids();
+        if (asteroids.Construct(256, 256, 2, 2))
+            asteroids.Start();
+        });
 
-    if (asteroids.Construct(256, 256, 2, 2))
-        asteroids.Start();
+    thread.join();
 
     return 0;
 }
