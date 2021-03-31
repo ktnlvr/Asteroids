@@ -9,7 +9,7 @@
 // SMOLL_RADIUS = AVERAGE_RADIUS / 4 ?
 #define BIG_ROCK_RADIUS 16
 // Amount of steps taken to draw the big asteroid 
-#define BIG_ROCK_STEPS 12
+#define BIG_ROCK_STEPS 16
 // Amount of big asteroids
 #define BIG_ROCKS_N 16
 
@@ -165,6 +165,7 @@ void Procedures::ProcessRocks() {
     for (int i = 0; i < BIG_ROCKS_N && (bool)(asteroids->rocks[i].size); ++i) {
         asteroids->rocks[i].transform.position += asteroids->rocks[i].velocity * asteroids->deltaTime;
         WrapPosition(asteroids->rocks[i].transform.position);
+        asteroids->rocks[i].transform.rotation += asteroids->rocks[i].velocity.mag() / asteroids->rocks[i].transform.radius * asteroids->deltaTime;
     }
 }
 
@@ -257,21 +258,24 @@ void Procedures::DrawShip() {
 void Procedures::DrawAsteroids() {
     // Drawing is done in steps and every iteration we rotate the current vector by this 
     // to achieve rotation
-    float step = 6.28319 / BIG_ROCK_STEPS /* rad */;
     Rock* rocks = asteroids->rocks;
     
     for (int i = 0; i < BIG_ROCKS_N && (bool)(asteroids->rocks[i].size); ++i) {
+        float step = (6.28319 + 0.07) / BIG_ROCK_STEPS /* rad */;
         // The loop starts with previous so it is our initial position
-        olc::vf2d previous = { 0, rocks[i].transform.radius };
+        olc::vf2d start = { 0, rocks[i].transform.radius };
+        olc::vf2d previous = start;
+        asteroids->RotateVector(previous, { 0, 0 }, rocks[i].transform.rotation);
         olc::vf2d current;
 
         // Move thru all the vertices one by one connecting them
-        for (int ii = 0; ii < BIG_ROCK_STEPS; ii++) {
-            current = previous;
-            asteroids->RotateVector(current, { 0, 0 }, step);
+        for (int ii = 1; ii <= BIG_ROCK_STEPS; ii++) {
+            current = start;
+            asteroids->RotateVector(current, { 0, 0 }, step * ii + rocks[i].transform.rotation);
             asteroids->DrawLine(
-                previous + rocks[i].transform.position,
-                current + rocks[i].transform.position, olc::GREY);
+                current + rocks[i].transform.position,
+                previous + rocks[i].transform.position
+            );
             previous = current;
         }
     }
