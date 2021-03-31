@@ -78,13 +78,15 @@ namespace Procedures {
 
 
 bool Transform::operator&&(Transform& other) {
-    return (other.position - position).mag2() < other.radius * other.radius;
+    // sqrt is usually expensive so just using squares why not
+    float distance2 = (other.position - position).mag2();
+    return distance2 < (radius + other.radius)* (radius + other.radius);
 }
 
 bool Asteroids::OnUserCreate() {
     asteroids = this;
 
-    asteroids->rocks[0] = Rock({ ScreenCenter() }, { 0, 20 }, Rock::Size::BIG);
+    asteroids->rocks[0] = Rock({ ScreenCenter(), BIG_ROCK_RADIUS }, { 0, 20 }, Rock::Size::BIG);
     asteroids->ship.transform.position = asteroids->ScreenCenter();
     asteroids->ship.dimensions = { 7, 10 };
     asteroids->ship.transform.radius = asteroids->ship.dimensions.x < asteroids->ship.dimensions.y ? asteroids->ship.dimensions.x : asteroids->ship.dimensions.y;
@@ -227,16 +229,23 @@ void Procedures::DrawShip() {
         olc::vi2d { -asteroids->ScreenWidth(), -asteroids->ScreenHeight() },
     };
 
+#ifndef NDEBUG
+        // Debug direction and collision radius
+        asteroids->DrawLine(center, center - direction * 16, olc::DARK_GREY);
+
+        bool isColliding = false;
+
+        for (int ii = 0; ii < BIG_ROCKS_N; ++ii) 
+            isColliding |= asteroids->rocks[ii].transform && (asteroids->ship.transform);
+
+        asteroids->DrawCircle(center, transform->radius, isColliding ? olc::RED : olc::GREEN);
+#endif
+
     // Might as well unroll this
     #pragma unroll (9)
     for (int i = 0; i < 9; i++) {
         olc::vi2d offset = offsets[i];
 
-#ifndef NDEBUG
-        // Debug direction and collision radius
-        asteroids->DrawLine(center + offset, center - direction * 16 + offset, olc::RED);
-        asteroids->DrawCircle(center + offset, transform->radius, olc::GREEN);
-#endif
         asteroids->DrawLine(a + offset, b + offset);
         asteroids->DrawLine(b + offset, d + offset);
         asteroids->DrawLine(d + offset, c + offset);
@@ -253,7 +262,7 @@ void Procedures::DrawAsteroids() {
     
     for (int i = 0; i < BIG_ROCKS_N && (bool)(asteroids->rocks[i].size); ++i) {
         // The loop starts with previous so it is our initial position
-        olc::vf2d previous = { 0, BIG_ROCK_RADIUS };
+        olc::vf2d previous = { 0, rocks[i].transform.radius };
         olc::vf2d current;
 
         // Move thru all the vertices one by one connecting them
