@@ -9,9 +9,11 @@
 // SMOLL_RADIUS = AVERAGE_RADIUS / 4 ?
 #define BIG_ROCK_RADIUS 16
 // Amount of steps taken to draw the big asteroid 
-#define BIG_ROCK_STEPS 16
+#define BIG_ROCK_STEPS 9
 // Amount of big asteroids
 #define BIG_ROCKS_N 16
+// The least size of rocks radius de-facto to avoid collision confusion
+#define ROCK_LEAST_RADIUS_COEFFICIENT 0.8
 // The angle at which smaller asteroids spawn (rad)
 #define ROCK_TILT_ANGLE 0.7
 // Maximum amount of projectiles to be alive
@@ -110,6 +112,10 @@ namespace Procedures {
     void DrawProjectiles();
 }
 
+// Generate a pseudo-random number using a permutation of Lehmer's Algorithm
+uint32_t pseudo_random(uint64_t seed) {
+    return (seed * 0xda942042e4dd58b5) >> 32;
+}
 
 bool Transform::operator&&(Transform& other) {
     // sqrt is usually expensive so just using squares why not
@@ -353,18 +359,40 @@ void Procedures::DrawAsteroids() {
     // Drawing is done in steps and every iteration we rotate the current vector by this 
     // to achieve rotation
     Rock* rocks = asteroids->rocks;
-    
+
     for (int i = 0; i < BIG_ROCKS_N && (bool)(asteroids->rocks[i].size); ++i) {
+
+#ifndef NDEBUG 
+        // Draw collision radius 
+        asteroids->DrawCircle(rocks[i].transform.position, rocks[i].transform.radius, olc::DARK_GREY);
+#endif
+
         float step = 6.28319 / BIG_ROCK_STEPS /* rad */;
         // The loop starts with previous so it is our initial position
-        olc::vf2d start = { 0, rocks[i].transform.radius };
+        olc::vf2d start = { 0, (float)
+            // using the same formula as per-vertex
+            // but times BIG_ROCK_STEPS instead of ii to ensure
+            // the last vertex locking on the first
+            (pseudo_random( ( (uint64_t)(&rocks[i]) ) * BIG_ROCK_STEPS)
+                % ((uint64_t)rocks[i].transform.radius / 3)
+                + rocks[i].transform.radius * ROCK_LEAST_RADIUS_COEFFICIENT) };
+
         olc::vf2d previous = start;
         asteroids->RotateVector(previous, { 0, 0 }, rocks[i].transform.rotation);
         olc::vf2d current;
 
         // Move thru all the vertices one by one connecting them
         for (int ii = 1; ii <= BIG_ROCK_STEPS; ii++) {
-            current = start;
+            /// A vector based on the current position
+            current = { 0, (float)
+                // when using a pointer random will be specific for each rock
+                // and by using ii we ensure that it is also vertex specific
+                // maximum drawable radius is larger than it's collision radius
+                // to provide better player experience
+                (pseudo_random(((uint64_t)(&rocks[i])) * ii)
+                    % ((uint64_t)rocks[i].transform.radius / 3)
+                    + rocks[i].transform.radius * ROCK_LEAST_RADIUS_COEFFICIENT) };
+
             asteroids->RotateVector(current, { 0, 0 }, step * ii + rocks[i].transform.rotation);
             asteroids->DrawLine(
                 current + rocks[i].transform.position,
