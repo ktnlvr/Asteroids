@@ -15,7 +15,7 @@
 // The least size of rocks radius de-facto to avoid collision confusion
 #define ROCK_LEAST_RADIUS_COEFFICIENT 0.8
 // The angle at which smaller asteroids spawn (rad)
-#define ROCK_TILT_ANGLE 0.7
+#define ROCK_TILT_ANGLE 2
 // Maximum amount of projectiles to be alive
 #define PROJECTILE_POOL_SIZE 32
 // Radius of one projectile
@@ -162,11 +162,10 @@ void Asteroids::DestroyAsteroid(size_t i) {
     rock.size = (Rock::Size)((char)(rock.size) - 1);
     
     if ((bool)rock.size) {
-        asteroids->RotateVector(rock.velocity, { 0, 0 }, ROCK_TILT_ANGLE);
+        asteroids->RotateVector(rock.velocity, { 0, 0 }, fmod((float)pseudo_random((uint64_t)&rock), 2 * ROCK_TILT_ANGLE) + ROCK_TILT_ANGLE);
         rock.transform.radius /= 2;
         rock = asteroids->rocks[++asteroids->rock_counter] = Rock(rock);
-        // TODO: uneven splitting
-        asteroids->RotateVector(rock.velocity, { 0, 0 }, ROCK_TILT_ANGLE * -2);
+        asteroids->RotateVector(rock.velocity, { 0, 0 }, (-fmod((float)pseudo_random((uint64_t)&rock - (uint64_t)&rock.transform), 2 * ROCK_TILT_ANGLE)) + ROCK_TILT_ANGLE);
     }
 }
 
