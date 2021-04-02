@@ -12,6 +12,8 @@
 #define BIG_ROCK_STEPS 16
 // Amount of big asteroids
 #define BIG_ROCKS_N 16
+// The angle at which smaller asteroids spawn (rad)
+#define ROCK_TILT_ANGLE 0.7
 // Maximum amount of projectiles to be alive
 #define PROJECTILE_POOL_SIZE 32
 // Radius of one projectile
@@ -59,9 +61,9 @@ struct Rock {
     // *softly* The chonk chart
     enum struct Size : char {
         NONE = 0, // indicated that the asteroid is none existent
-        BIG = 1,
+        SMALL = 1,
         AVERAGE = 2,
-        SMALL = 3
+        BIG = 3,
     } size;
 
     Rock() : transform({ {0, 0}, 0, 0 }), velocity({ 0, 0 }), size(Rock::Size::NONE) {};
@@ -78,6 +80,7 @@ inline const Rock Rock::null = Rock({ { {0, 0}, 0, 0 }, { 0, 0 } });
 
 struct Asteroids : public olc::PixelGameEngine {
     Rock rocks[BIG_ROCKS_N];
+    size_t rock_counter = 0;
 
     Projectile projectiles[PROJECTILE_POOL_SIZE];
     size_t projectileStackCounter = 0;
@@ -89,6 +92,8 @@ struct Asteroids : public olc::PixelGameEngine {
     olc::vf2d ScreenCenter();
     void RotateVector(olc::vf2d& target, olc::vf2d around, float angle);
     void SummonProjectile(olc::vf2d position, olc::vf2d velocity);
+    void SplitAsteroid(Rock *);
+
     bool OnUserCreate() override;
     bool OnUserUpdate(float) override;
 };
@@ -144,6 +149,14 @@ void Asteroids::SummonProjectile(olc::vf2d position, olc::vf2d velocity) {
     bullet->transform.position = position;
     bullet->transform.radius = PROJECTILE_RADIUS;
     bullet->velocity = velocity;
+}
+
+void Asteroids::SplitAsteroid(Rock* rock) {
+    rock->size = (Rock::Size)((char)(rock->size) - 1);
+    asteroids->RotateVector(rock->velocity, { 0, 0 }, ROCK_TILT_ANGLE);
+    rock->transform.radius /= 2;
+
+    // TODO: summon second asteroid
 }
 
 inline void WrapPosition(olc::vf2d& v) {
@@ -236,11 +249,11 @@ void Procedures::ProcessCollisions() {
         for (int j = 0; j < PROJECTILE_POOL_SIZE; j++) {
             Projectile& projectile = asteroids->projectiles[j];
 
-            if (projectile.transform && rock.transform && (bool)(rock.size)) {
-                //                   ^ custom operator  ^ ordinary boolean AND
+            if (projectile.transform && rock.transform && (bool)(rock.size) && projectile.transform.radius != 0) {
+                //   custom operator ^                 ^  ordinary boolean  ^
                 
                 // Kill both rock and projectile
-                rock.size = Rock::Size::NONE;
+                asteroids->SplitAsteroid(&rock);
                 projectile.transform.radius = 0;
             }
         }
@@ -366,6 +379,7 @@ void Procedures::DrawAsteroids() {
 void Procedures::DrawProjectiles() {
     for (int i = 0; i < PROJECTILE_POOL_SIZE; ++i) {
         Projectile& self = asteroids->projectiles[i];
+        if (self.transform.radius != 0)
         asteroids->DrawCircle(self.transform.position, self.transform.radius, palette->projectile);
     }
 }
