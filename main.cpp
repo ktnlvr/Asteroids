@@ -238,8 +238,9 @@ void Procedures::ProcessInputs() {
 }
 
 void Procedures::ProcessRocks() {
-    for (int i = 0; i < BIG_ROCKS_N && (bool)(asteroids->rocks[i].size); ++i) {
+    for (int i = 0; i < BIG_ROCKS_N; ++i) {
         Rock& rock = asteroids->rocks[i];
+        if (rock.size == Rock::Size::NONE) continue;
         rock.transform.position += rock.velocity * asteroids->deltaTime;
         WrapPosition(rock.transform.position);
         rock.transform.rotation += rock.velocity.mag() / rock.transform.radius * asteroids->deltaTime;
@@ -365,7 +366,8 @@ void Procedures::DrawAsteroids() {
     // to achieve rotation
     Rock* rocks = asteroids->rocks;
 
-    for (int i = 0; i < BIG_ROCKS_N && (bool)(asteroids->rocks[i].size); ++i) {
+    for (int i = 0; i < BIG_ROCKS_N; ++i) {
+        if (rocks[i].size == Rock::Size::NONE) continue;
 
 #ifndef NDEBUG 
         // Draw collision radius 
