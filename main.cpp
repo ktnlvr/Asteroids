@@ -12,6 +12,8 @@
 #define BIG_ROCK_STEPS 9
 // Amount of big asteroids
 #define BIG_ROCKS_N 16
+// Max speed coefficient to be applied upon destruction
+#define ROCK_SPEED_COEFFICIENT 2.5
 // The least size of rocks radius de-facto to avoid collision confusion
 #define ROCK_LEAST_RADIUS_COEFFICIENT 0.8
 // The angle at which smaller asteroids spawn (rad)
@@ -164,6 +166,7 @@ void Asteroids::DestroyAsteroid(size_t i) {
     if ((bool)rock.size) {
         asteroids->RotateVector(rock.velocity, { 0, 0 }, fmod((float)pseudo_random((uint64_t)&rock), 2 * ROCK_TILT_ANGLE) + ROCK_TILT_ANGLE);
         rock.transform.radius /= 2;
+        rock.velocity *= fmod((float)pseudo_random((uint64_t)&rock), ROCK_SPEED_COEFFICIENT / 2) + ROCK_SPEED_COEFFICIENT / 2;
         rock = asteroids->rocks[++asteroids->rock_counter] = Rock(rock);
         asteroids->RotateVector(rock.velocity, { 0, 0 }, (-fmod((float)pseudo_random((uint64_t)&rock - (uint64_t)&rock.transform), 2 * ROCK_TILT_ANGLE)) + ROCK_TILT_ANGLE);
     }
