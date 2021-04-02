@@ -37,6 +37,7 @@ Palette* palette;
 
 struct Transform {
     olc::vf2d position;
+    olc::vf2d velocity;
     float radius;
     float rotation;
 
@@ -47,7 +48,6 @@ struct Transform {
 struct Ship {
     Transform transform;
     olc::vf2d dimensions;
-    olc::vf2d velocity;
 
     struct Stats {
         float rotationSpeed;
@@ -58,7 +58,6 @@ struct Ship {
 
 struct Rock {
     Transform transform;
-    olc::vf2d velocity;
 
     static const Rock null;
 
@@ -70,17 +69,16 @@ struct Rock {
         BIG = 3,
     } size;
 
-    Rock() : transform({ {0, 0}, 0, 0 }), velocity({ 0, 0 }), size(Rock::Size::NONE) {};
-    Rock(Transform transform, olc::vf2d velocity, Rock::Size size = Rock::Size::NONE) : transform(transform), velocity(velocity), size(size) {}
+    Rock() : transform({ { 0, 0 }, { 0, 0 }, 0, 0 }), size(Rock::Size::NONE) {};
+    Rock(Transform transform, Rock::Size size = Rock::Size::NONE) : transform(transform), size(size) {}
 
 };
 
 struct Projectile {
     Transform transform;
-    olc::vf2d velocity;
 };
 
-inline const Rock Rock::null = Rock({ { {0, 0}, 0, 0 }, { 0, 0 } });
+inline const Rock Rock::null = Rock();
 
 struct Asteroids : public olc::PixelGameEngine {
     Rock rocks[BIG_ROCKS_N];
@@ -133,7 +131,7 @@ bool Asteroids::OnUserCreate() {
 
     Ship& ship = asteroids->ship;
 
-    asteroids->rocks[0] = Rock({ ScreenCenter(), BIG_ROCK_RADIUS }, { 0, 20 }, Rock::Size::BIG);
+    asteroids->rocks[0] = Rock({ ScreenCenter(),  { 0, 20 }, BIG_ROCK_RADIUS }, Rock::Size::BIG);
     ship.transform.position = asteroids->ScreenCenter();
     ship.dimensions = { 7, 10 };
 
@@ -158,7 +156,7 @@ void Asteroids::SummonProjectile(olc::vf2d position, olc::vf2d velocity) {
 
     bullet->transform.position = position;
     bullet->transform.radius = PROJECTILE_RADIUS;
-    bullet->velocity = velocity;
+    bullet->transform.velocity = velocity;
 }
 
 void Asteroids::DestroyAsteroid(size_t i) {
@@ -166,11 +164,11 @@ void Asteroids::DestroyAsteroid(size_t i) {
     rock.size = (Rock::Size)((char)(rock.size) - 1);
     
     if ((bool)rock.size) {
-        asteroids->RotateVector(rock.velocity, { 0, 0 }, fmod((float)pseudo_random((uint64_t)&rock), 2 * ROCK_TILT_ANGLE) + ROCK_TILT_ANGLE);
+        asteroids->RotateVector(rock.transform.velocity, { 0, 0 }, fmod((float)pseudo_random((uint64_t)&rock), 2 * ROCK_TILT_ANGLE) + ROCK_TILT_ANGLE);
         rock.transform.radius /= 2;
-        rock.velocity *= fmod((float)pseudo_random((uint64_t)&rock), ROCK_SPEED_COEFFICIENT / 2) + ROCK_SPEED_COEFFICIENT / 2;
+        rock.transform.velocity *= fmod((float)pseudo_random((uint64_t)&rock), ROCK_SPEED_COEFFICIENT / 2) + ROCK_SPEED_COEFFICIENT / 2;
         rock = asteroids->rocks[++asteroids->rock_counter] = Rock(rock);
-        asteroids->RotateVector(rock.velocity, { 0, 0 }, (-fmod((float)pseudo_random((uint64_t)&rock - (uint64_t)&rock.transform), 2 * ROCK_TILT_ANGLE)) + ROCK_TILT_ANGLE);
+        asteroids->RotateVector(rock.transform.velocity, { 0, 0 }, (-fmod((float)pseudo_random((uint64_t)&rock - (uint64_t)&rock.transform), 2 * ROCK_TILT_ANGLE)) + ROCK_TILT_ANGLE);
     }
 }
 
@@ -227,15 +225,15 @@ void Procedures::ProcessInputs() {
     asteroids->RotateVector(forward, olc::vf2d(0, 0), ship.transform.rotation);
 
     // Velocity is controlled with S and W, can also be 0, -1 and 1
-    ship.velocity += forward * ship.stats.movementSpeed * (asteroids->GetKey(olc::Key::S).bHeld - asteroids->GetKey(olc::Key::W).bHeld) * asteroids->deltaTime;
+    ship.transform.velocity += forward * ship.stats.movementSpeed * (asteroids->GetKey(olc::Key::S).bHeld - asteroids->GetKey(olc::Key::W).bHeld) * asteroids->deltaTime;
     
     if (asteroids->GetKey(olc::Key::SPACE).bPressed) {
         asteroids->SummonProjectile(ship.transform.position, -forward * ship.stats.projectileSpeed);
     }
 
     // Since drag hasn't made it yet, just use this
-    ship.transform.position += ship.velocity;
-    ship.velocity = { 0, 0 };
+    ship.transform.position += ship.transform.velocity;
+    ship.transform.velocity = { 0, 0 };
 
     // Wrap the ship, doesn't apply to anything else
     WrapPosition(ship.transform.position);
@@ -245,16 +243,16 @@ void Procedures::ProcessRocks() {
     for (int i = 0; i < BIG_ROCKS_N; ++i) {
         Rock& rock = asteroids->rocks[i];
         if (rock.size == Rock::Size::NONE) continue;
-        rock.transform.position += rock.velocity * asteroids->deltaTime;
+        rock.transform.position += rock.transform.velocity * asteroids->deltaTime;
         WrapPosition(rock.transform.position);
-        rock.transform.rotation += rock.velocity.mag() / rock.transform.radius * asteroids->deltaTime;
+        rock.transform.rotation += rock.transform.velocity.mag() / rock.transform.radius * asteroids->deltaTime;
     }
 }
 
 void Procedures::ProcessProjectiles() {
     for (int i = 0; i < PROJECTILE_POOL_SIZE; ++i) {
         Projectile& self = asteroids->projectiles[i];
-        self.transform.position += self.velocity * asteroids->deltaTime;
+        self.transform.position += self.transform.velocity * asteroids->deltaTime;
     }
 }
 
