@@ -94,7 +94,7 @@ struct Asteroids : public olc::PixelGameEngine {
     olc::vf2d ScreenCenter();
     void RotateVector(olc::vf2d& target, olc::vf2d around, float angle);
     void SummonProjectile(olc::vf2d position, olc::vf2d velocity);
-    void SplitAsteroid(Rock *);
+    void DestroyAsteroid(size_t);
 
     bool OnUserCreate() override;
     bool OnUserUpdate(float) override;
@@ -157,12 +157,17 @@ void Asteroids::SummonProjectile(olc::vf2d position, olc::vf2d velocity) {
     bullet->velocity = velocity;
 }
 
-void Asteroids::SplitAsteroid(Rock* rock) {
-    rock->size = (Rock::Size)((char)(rock->size) - 1);
-    asteroids->RotateVector(rock->velocity, { 0, 0 }, ROCK_TILT_ANGLE);
-    rock->transform.radius /= 2;
-
-    // TODO: summon second asteroid
+void Asteroids::DestroyAsteroid(size_t i) {
+    Rock& rock = asteroids->rocks[i];
+    rock.size = (Rock::Size)((char)(rock.size) - 1);
+    
+    if ((bool)rock.size) {
+        asteroids->RotateVector(rock.velocity, { 0, 0 }, ROCK_TILT_ANGLE);
+        rock.transform.radius /= 2;
+        rock = asteroids->rocks[++asteroids->rock_counter] = Rock(rock);
+        // TODO: uneven splitting
+        asteroids->RotateVector(rock.velocity, { 0, 0 }, ROCK_TILT_ANGLE * -2);
+    }
 }
 
 inline void WrapPosition(olc::vf2d& v) {
@@ -259,7 +264,7 @@ void Procedures::ProcessCollisions() {
                 //   custom operator ^                 ^  ordinary boolean  ^
                 
                 // Kill both rock and projectile
-                asteroids->SplitAsteroid(&rock);
+                asteroids->DestroyAsteroid(i);
                 projectile.transform.radius = 0;
             }
         }
