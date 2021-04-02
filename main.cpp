@@ -114,6 +114,8 @@ namespace Procedures {
     void DrawProjectiles();
 }
 
+static uint64_t score = 0;
+
 // Generate a pseudo-random number using a permutation of Lehmer's Algorithm
 uint32_t pseudo_random(uint64_t seed) {
     return (seed * 0xda942042e4dd58b5) >> 32;
@@ -269,6 +271,7 @@ void Procedures::ProcessCollisions() {
                 // Kill both rock and projectile
                 asteroids->DestroyAsteroid(i);
                 projectile.transform.radius = 0;
+                score++;
             }
         }
     }
@@ -428,6 +431,7 @@ int main(int argc, char* argv[]) {
         Asteroids asteroids = Asteroids();
         if (asteroids.Construct(256, 256, 2, 2))
             asteroids.Start();
+            printf("Score: %i\n", score);
         });
 
     thread.join();
